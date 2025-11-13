@@ -1,0 +1,51 @@
+{
+  "build": {
+    "dockerfile": "Dockerfile",
+    "image": "mi-bind-01",
+    "args": {
+      "__uname": "mibind"
+    }
+  },
+  "remoteEnv": {
+    "CONTAINER_WORKSPACE_FOLDER": "${containerWorkspaceFolder}",
+    "TRIVY_CACHE_DIR": "${containerWorkspaceFolder}/cache/trivy"
+  },
+  "name": "mi-bind-01",
+  "containerUser": "mibind",
+  "runArgs": [
+    "--rm",
+    "--hostname",
+    "mi-bind-01",
+    "--name",
+    "mi-bind-01",
+    "--security-opt",
+    "seccomp=${localWorkspaceFolder}/.devcontainer/bind-01/seccomp.json"
+  ],
+  "postCreateCommand": "git config --global --add safe.directory ${CONTAINER_WORKSPACE_FOLDER}",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "workbench.colorTheme": "Dark Green"
+      },
+      "extensions": [
+        "aquasecurityofficial.trivy-vulnerability-scanner",
+        "eamodio.gitlens",
+        "foxundermoon.shell-format",
+        "hediet.vscode-drawio",
+        "legebeker.violet-flask",
+        "mervin.markdown-formatter",
+        "mhutchie.git-graph",
+        "ms-azuretools.vscode-docker",
+        "oderwat.indent-rainbow",
+        "redhat.vscode-yaml",
+        "streetsidesoftware.code-spell-checker",
+        "timonwong.shellcheck",
+        "yzhang.markdown-all-in-one",
+        "zrnatoneto.dark-green"
+      ]
+    }
+  },
+  "mounts": [
+    "target=${containerWorkspaceFolder}/cache/trivy,type=volume"
+  ]
+}
