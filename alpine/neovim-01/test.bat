@@ -1,0 +1,1 @@
+docker run --rm -it --entrypoint=/bin/sh local/alpine/neovim-01
