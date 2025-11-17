@@ -2,7 +2,18 @@
 
 ## Repository Purpose
 
-This repository contains a set of container images for various endeavors. Images are added incrementally as needed.
+This repository contains a set of container images for various personal endeavors. Images are added incrementally as needed.
+
+## Image builders organization
+
+Images to be built are present in the folder `images`. Each image will have a context folder where a "Dockerfile" is present.
+
+We define the following convention for subfolders
+
+Folder|Description
+-|-
+`images\s`| Images gathering software only
+`images\u`| Images built on top of the former, but adding non-root users
 
 ## Image Requirements
 

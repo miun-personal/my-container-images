@@ -34,12 +34,12 @@ RUN apk add --no-cache --update \
         yamllint=${__yamllint_version} \
     && curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
     | sh -s -- -b /usr/local/bin ${__trivy_ver} /tmp/trivy-install.sh \
-    && echo bind:100000:65536 >> /etc/subuid \
-    && echo bind:100000:65536 >> /etc/subgid \
+    && echo ${__uname}:100000:65536 >> /etc/subuid \
+    && echo ${__uname}:100000:65536 >> /etc/subgid \
     && adduser -D -u ${__uid} ${__uname} \
     && mkdir -p ${__trivy_cache_dir} \
     && chown ${__uname}:0 ${__trivy_cache_dir}
 
-USER bind
+USER ${__uname}
 
 VOLUME ${__trivy_cache_dir}

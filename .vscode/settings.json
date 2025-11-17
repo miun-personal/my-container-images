@@ -1,0 +1,12 @@
+{
+  "cSpell.words": [
+    "backdoors",
+    "Buildah",
+    "nofile",
+    "seccomp",
+    "syscall",
+    "syscalls",
+    "ulimits"
+  ],
+  "github.copilot.nextEditSuggestions.enabled": true
+}

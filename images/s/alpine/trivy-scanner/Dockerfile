@@ -3,7 +3,7 @@ FROM alpine:${__alpine_tag}
 
 ARG __curl_version=8.14.1-r2
 ARG __docker_cli_version=28.3.3-r3
-ARG __jq_version=1.8.0-r0
+ARG __jq_version=1.8.1-r0
 ARG __trivy_ver=v0.67.2
 
 ARG __uid=851

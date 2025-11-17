@@ -65,6 +65,7 @@
 				"kexec_file_load",
 				"kexec_load",
 				"map_shadow_stack",
+				"reboot",
 				"migrate_pages",
 				"move_pages",
 				"nfsservctl",
@@ -717,7 +718,6 @@
 				"quotactl",
 				"quotactl_fd",
 				"setdomainname",
-
 				"setns"
 			],
 			"action": "SCMP_ACT_ERRNO",

@@ -1,4 +1,4 @@
-ARG __alpine_version=3.22.0
+ARG __alpine_version=3.22
 FROM alpine:${__alpine_version}
 
 # Alpine packages versions: https://pkgs.alpinelinux.org/

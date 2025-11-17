@@ -19,7 +19,8 @@
     "--name",
     "mi-bind-01",
     "--security-opt",
-    "seccomp=${localWorkspaceFolder}/.devcontainer/bind-01/seccomp.json"
+    "seccomp=${localWorkspaceFolder}/.devcontainer/bind-01/seccomp.json",
+    "--device=/dev/fuse"
   ],
   "postCreateCommand": "git config --global --add safe.directory ${CONTAINER_WORKSPACE_FOLDER}",
   "customizations": {
