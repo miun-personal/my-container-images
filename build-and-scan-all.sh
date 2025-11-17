@@ -128,13 +128,13 @@ tail -n +2 images.csv | while IFS=, read -r repo folder || [ -n "$repo" ]; do
   sbom_file="$scan_results/sbom-$image_safe_name.json"
   
   # Run Trivy scan
-  if ! trivy image --cache-dir /mnt/trivy-cache --offline-scan --format table --output "$scan_file" "$full_image_name"; then
+  if ! trivy image --offline-scan --cache-dir /mnt/trivy-cache --format table --output "$scan_file" "$full_image_name"; then
     color_yellow "Warning: Scan of $full_image_name completed with warnings"
     echo ""
   fi
   
   # Generate SBOM
-  trivy image --cache-dir /mnt/trivy-cache --offline-scan --format cyclonedx --output "$sbom_file" "$full_image_name" 2>/dev/null || true
+  trivy image --offline-scan --cache-dir /mnt/trivy-cache --format cyclonedx --output "$sbom_file" "$full_image_name" 2>/dev/null || true
   
   # Count vulnerabilities by severity
   critical_count=0
