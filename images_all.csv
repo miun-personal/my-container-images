@@ -1,0 +1,10 @@
+Repo,folder
+miunpersonal/s-alpine-bind-trivy,images/s/alpine/bind-trivy
+miunpersonal/s-alpine-git-client-sw,images/s/alpine/git-client-sw
+miunpersonal/s-alpine-neovim-01,images/s/alpine/neovim-01
+miunpersonal/s-alpine-pure-bind,images/s/alpine/pure-bind
+miunpersonal/s-alpine-trivy-scanner,images/s/alpine/trivy-scanner
+miunpersonal/s-ubi9-git-client,images/s/ubi/minimal-9/git-client
+miunpersonal/u-alpine-bind-trivy,images/u/alpine/bind-trivy
+miunpersonal/u-alpine-git-ssh-client,images/u/alpine/git-ssh-client
+miunpersonal/u-alpine-pure-bind,images/u/alpine/pure-bind
