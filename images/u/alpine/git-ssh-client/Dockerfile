@@ -24,51 +24,56 @@ ARG __gid=888
 ARG __gname=dev
 ARG __uid=888
 ARG __uname=dev
-ARG __user_home=/home/${__uname}
 
-RUN addgroup -g ${__gid} ${__gname} \
-    && adduser -u ${__uid} -G ${__gname} -D -h ${__user_home} ${__uname} \
+## By design - this is where we work
+ARG __workspace_home=/workspace
+## Simplify parameters into a single workspace, this image is intended to be used as devcontainer or similar
+
+ENV WORKSPACE_HOME=${__workspace_home} \
+    WORKSPACE_USER_HOME=${__workspace_home}/home/${__uname} \
+    WORKSPACE_MAIN_REPO_HOME=${__workspace_home}/mnt/this-repo \
+    WORKSPACE_MOUNTED_SCRIPTS_HOME=${__workspace_home}/mnt/scripts \
+    WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME=${__workspace_home}/util \
+    ENV=${__workspace_home}\.ashrc \
+    TEMPDIR=/tmp
+
+RUN echo '# User aliases and environment' > ${ENV} \
+  && echo 'alias ll="ls -lah"' >> ${ENV} \
+  && echo 'alias scommit="git commit -s"' >> ${ENV} \
+  && echo 'alias scommitg="git commit -S -s"' >> ${ENV} \
+  && echo 'alias smerge="git merge --signoff"' >> ${ENV} \
+  && echo 'alias samend="git commit --amend -S -s"' >> ${ENV} \
+  && echo 'alias spush="git push --signed"' >> ${ENV} \
+  && echo 'alias slog="git log --show-signature"' >> ${ENV} \
+  && echo 'alias srebase="git rebase --signoff"' >> ${ENV} \
+  && echo 'alias sclone="git clone --config commit.gpgsign=true"' >> ${ENV} \
+    && echo '' >> ${ENV} \
+    && echo '# Source ssh-agent if available' >> ${ENV} \
+    && echo '[ -f "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/agent-init.sh" ] && . "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/agent-init.sh"' >> ${ENV} \
+    && echo '' >> ${ENV} \
+    && echo '# Ensure main repo is a safe git directory' >> ${ENV} \
+    && echo 'if ! git config --global --get-all safe.directory | grep -qx "${WORKSPACE_MAIN_REPO_HOME}"; then git config --global --add safe.directory "${WORKSPACE_MAIN_REPO_HOME}"; fi' >> ${ENV} \
+    && addgroup -g ${__gid} ${__gname} \
+    && adduser -u ${__uid} -G ${__gname} -D -h ${WORKSPACE_USER_HOME} ${__uname} \
     && mkdir -p \
-      "${__user_home}/o" \
-      "${__user_home}/.ssh" \
-      "${__user_home}/scripts/mounted" \
-    && chown ${__uid}:${__gid} \
-      "${__user_home}/o" \
-      "${__user_home}/.ssh" \
-      "${__user_home}/scripts/mounted"
+      "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}" \
+      "${WORKSPACE_MAIN_REPO_HOME}" \
+      "${WORKSPACE_MOUNTED_SCRIPTS_HOME}" \
+    && chown -R ${__uid}:${__gid} "${__workspace_home}" \
+    && git config --global --add safe.directory "${WORKSPACE_MAIN_REPO_HOME}"
 
     # Copy scripts into the image
-COPY --chown=${__uid}:${__gid} scripts/ ${__user_home}/scripts/image/
+COPY --chown=${__uid}:${__gid} scripts/ ${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/
 
-RUN chmod u+x ${__user_home}/scripts/image/*.sh
+RUN chmod u+x ${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/*.sh
 
 USER ${__uname}
 
-WORKDIR "${__user_home}"
+WORKDIR "${__workspace_home}"
 
-# Configure shell environment
-# Create .ashrc for interactive non-login shells
-RUN echo '# User aliases and environment' > ${__user_home}/.ashrc \
-    && echo 'alias ll="ls -lah"' >> ${__user_home}/.ashrc \
-    && echo 'alias scommit="git commit -s"' >> ${__user_home}/.ashrc \
-    && echo '' >> ${__user_home}/.ashrc \
-    && echo '# Source ssh-agent if available' >> ${__user_home}/.ashrc \
-    && echo '[ -f "$HOME/s/agent-init.sh" ] && . "$HOME/s/agent-init.sh"' >> ${__user_home}/.ashrc
-
-# Set ENV to point to .ashrc so it's loaded for all interactive shells
-ENV ENV=${__user_home}/.ashrc
-
-RUN git config --global commit.gpgsign true \
-  && git config --global gpg.format ssh \
-  && git config --global core.eol lf \
-  && git config --global core.autocrlf input \
-  && git config --global format.signoff true
-
-VOLUME "${__user_home}/o" "${__user_home}/.ssh" "${__user_home}/scripts/mounted"
-## Convention:
-# - ~/o overwatch / this repo / workspace
-# - ~/.ssh user to mount to keep the keys across multiple runs
-# - ~/scripts/mounted - user to mount for their own scripts
-# - ~/scripts/image - scripts already provided to the user in the image
+VOLUME \
+  "${WORKSPACE_USER_HOME}" \
+  "${WORKSPACE_MAIN_REPO_HOME}" \
+  "${WORKSPACE_MOUNTED_SCRIPTS_HOME}"
 
 ## End Layer

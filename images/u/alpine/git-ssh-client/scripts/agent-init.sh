@@ -1,15 +1,17 @@
 #!/bin/sh
 # Initialize ssh-agent
 # shellcheck disable=SC1090,SC1091
-SSH_ENV="$HOME/.ssh/agent-env"
+SSH_ENV_DIR="/dev/shm/ssh-agent-dir-$(id -u)-$$"
+SSH_ENV="${SSH_ENV_DIR}/.env"
 
 agent_load_env() {
-    [ -f "$SSH_ENV" ] && . "$SSH_ENV" >/dev/null 2>&1
+    [ -f "${SSH_ENV}" ] && . "${SSH_ENV}" >/dev/null 2>&1
 }
 
 agent_start() {
-    (umask 077; ssh-agent 2>/dev/null | sed 's/^echo/#echo/' > "$SSH_ENV")
-    [ -f "$SSH_ENV" ] && . "$SSH_ENV" >/dev/null 2>&1
+    mkdir -p "${SSH_ENV_DIR}"
+    (umask 077; TMPDIR="${SSH_ENV_DIR}" ssh-agent 2>/dev/null | sed 's/^echo/#echo/' > "${SSH_ENV}")
+    [ -f "${SSH_ENV}" ] && . "${SSH_ENV}" >/dev/null 2>&1
 }
 
 # Load existing agent environment

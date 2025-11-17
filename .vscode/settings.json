@@ -1,8 +1,12 @@
 {
   "cSpell.words": [
+    "adduser",
+    "ashrc",
     "backdoors",
     "Buildah",
+    "gname",
     "nofile",
+    "scommit",
     "seccomp",
     "syscall",
     "syscalls",
