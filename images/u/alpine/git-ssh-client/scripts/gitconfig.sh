@@ -44,7 +44,7 @@ if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
     git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
     printf "%b[+] SSH signing configured%b\n" "${GREEN}" "${NC}"
 else
-    printf "%b! No SSH key found at ~/.ssh/id_ed25519.pub - skipping signing config%b\n" "${YELLOW}" "${NC}"
+    printf "%b! No SSH key found at %s - skipping signing config%b\n" "${YELLOW}" "$HOME/.ssh/id_ed25519.pub" "${NC}"
 fi
 
 git config --global commit.gpgsign true

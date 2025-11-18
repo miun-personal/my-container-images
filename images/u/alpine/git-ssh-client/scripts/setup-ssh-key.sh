@@ -20,28 +20,25 @@ DEFAULT_EMAIL="dev@example.com"
 EMAIL="${1:-$DEFAULT_EMAIL}"
 
 printf "\n"
-printf "${BLUE}=== SSH Key Generation for Run Configuration ===${NC}\n"
+printf "%b=== SSH Key Generation for Run Configuration ===%b\n" "${BLUE}" "${NC}"
 printf "\n"
 
-# Determine SSH directory
-if [ -d "$HOME/.ssh" ]; then
-    SSH_DIR="$HOME/.ssh"
-else
-    SSH_DIR="$(pwd)/.ssh"
-fi
+SSH_DIR="$HOME/.ssh"
+
+mkdir -p "${SSH_DIR}"
 
 KEY_FILE="${SSH_DIR}/id_ed25519"
 
-printf "${YELLOW}SSH Directory: ${SSH_DIR}${NC}\n"
-printf "${YELLOW}Email: ${EMAIL}${NC}\n"
+printf "%bSSH Directory: %s%b\n" "${YELLOW}" "${SSH_DIR}" "${NC}"
+printf "%bEmail: %s%b\n" "${YELLOW}" "${EMAIL}" "${NC}"
 printf "\n"
 
 # Check if key already exists
 if [ -f "$KEY_FILE" ]; then
-    printf "${YELLOW}WARNING: Key already exists at ${KEY_FILE}${NC}\n"
-    printf "${YELLOW}Do you want to:\n"
+    printf "%bWARNING: Key already exists at %s%b\n" "${YELLOW}" "${KEY_FILE}" "${NC}"
+    printf "%bDo you want to:\n%b" "${YELLOW}" "${NC}"
     printf "  1) Backup and replace\n"
-    printf "  2) Cancel${NC}\n"
+    printf "  2) Cancel\n"
     read -r choice
     
     case $choice in
@@ -50,18 +47,18 @@ if [ -f "$KEY_FILE" ]; then
             mkdir -p "$BACKUP_DIR"
             mv "${KEY_FILE}" "${BACKUP_DIR}/"
             mv "${KEY_FILE}.pub" "${BACKUP_DIR}/" 2>/dev/null || true
-            printf "${GREEN}[+] Backed up old key to ${BACKUP_DIR}${NC}\n"
+            printf "%b[+] Backed up old key to %s%b\n" "${GREEN}" "${BACKUP_DIR}" "${NC}"
             ;;
         *)
-            printf "${RED}Cancelled${NC}\n"
+            printf "%bCancelled%b\n" "${RED}" "${NC}"
             exit 0
             ;;
     esac
 fi
 
 printf "\n"
-printf "${GREEN}Generating new ed25519 SSH key...${NC}\n"
-printf "${YELLOW}You will be prompted for a passphrase - use a strong one!${NC}\n"
+printf "%bGenerating new ed25519 SSH key...%b\n" "${GREEN}" "${NC}"
+printf "%bYou will be prompted for a passphrase - use a strong one!%b\n" "${YELLOW}" "${NC}"
 printf "\n"
 
 # Generate the key
@@ -69,28 +66,28 @@ ssh-keygen -t ed25519 -C "$EMAIL" -f "$KEY_FILE"
 
 if [ $? -eq 0 ]; then
     printf "\n"
-    printf "${GREEN}[+] SSH key generated successfully!${NC}\n"
+    printf "%b[+] SSH key generated successfully!%b\n" "${GREEN}" "${NC}"
     printf "\n"
-    printf "${BLUE}=== Next Steps ===${NC}\n"
+    printf "%b=== Next Steps ===%b\n" "${BLUE}" "${NC}"
     printf "\n"
-    printf "1. ${YELLOW}Add your public key to GitHub/GitLab:${NC}\n"
-    printf "   cat ${KEY_FILE}.pub\n"
+    printf "1. %bAdd your public key to GitHub/GitLab:%b\n" "${YELLOW}" "${NC}"
+    printf "   cat %s.pub\n" "${KEY_FILE}"
     printf "\n"
-    printf "2. ${YELLOW}Configure git user settings:${NC}\n"
+    printf "2. %bConfigure git user settings:%b\n" "${YELLOW}" "${NC}"
     printf "   Create a .env file from .env.example and set:\n"
     printf "   GIT_USER_NAME=\"Your Name\"\n"
-    printf "   GIT_USER_EMAIL=\"$EMAIL\"\n"
+    printf "   GIT_USER_EMAIL=\"%s\"\n" "${EMAIL}"
     printf "\n"
-    printf "3. ${YELLOW}After starting the container, add your key to the agent:${NC}\n"
+    printf "3. %bAfter starting the container, add your key to the agent:%b\n" "${YELLOW}" "${NC}"
     printf "   ssh-add ~/.ssh/id_ed25519\n"
     printf "\n"
-    printf "4. ${YELLOW}Configure git signing (run from container):${NC}\n"
+    printf "4. %bConfigure git signing (run from container):%b\n" "${YELLOW}" "${NC}"
     printf "   ~/s/gitconfig.sh\n"
     printf "\n"
-    printf "${GREEN}Your public key:${NC}\n"
+    printf "%bYour public key:%b\n" "${GREEN}" "${NC}"
     cat "${KEY_FILE}.pub"
     printf "\n"
 else
-    printf "${RED}[-] Failed to generate SSH key${NC}\n"
+    printf "%b[-] Failed to generate SSH key%b\n" "${RED}" "${NC}"
     exit 1
 fi
