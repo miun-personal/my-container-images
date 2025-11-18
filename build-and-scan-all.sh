@@ -93,6 +93,8 @@ color_yellow "Step 2: Ensuring trivy-scanner is ready..."
 echo ""
 echo ""
 
+sleep 5 # Allow a bit of time for buildah to register the new images locally, otherwise the first scans may fail
+
 # Step 3: Scan all images with Trivy
 color_yellow "Step 3: Scanning all images with Trivy..."
 echo ""
