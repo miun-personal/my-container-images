@@ -1,0 +1,74 @@
+services:
+  git-ssh-client-01:
+    # Use pre-built image or build from local Dockerfile
+    image: local/u/alpine/git-ssh-client:latest
+    
+    # Alternative: build from Dockerfile
+    # build:
+    #   context: ../../..
+    #   dockerfile: Dockerfile
+    
+    # Mount points relative to the main repository
+    # Assumption: This devcontainer is opened from 
+    # r/c/me/my-container-images/images/u/alpine/git-ssh-client/
+    volumes:
+      # Main repository - the repo where this devcontainer lives
+      - ../..:/workspace/mnt/this-repo:cached
+      
+      # User home directory - named Docker volume (persists VS Code cache)
+      # Docker volumes preserve correct ownership (UID 888)
+      # Can be cleaned with: docker volume rm dc-ex-01_vscode-home
+      - vscode-home:/workspace/home/dev:cached
+      
+      # SSH keys - bind mount separately (persistent, long-lived)
+      # Mounted to a different location to avoid permission conflicts
+      # We'll symlink from home directory using postCreateCommand
+      - ./mounts/ssh:/workspace/home/dev/.ssh:cached
+      
+      # Optional: Git config persistence (if you want it separate from volume)
+      # - ./mounts/gitconfig:/workspace/home/dev/.gitconfig:cached
+      
+      # Additional managed repositories
+      # Mount a 'repos' directory parallel to the main repo
+      - ./mounts/repos:/workspace/mnt/repos:cached
+      
+      # Custom scripts directory (optional)
+      # Mount a 'scripts' directory in the .devcontainer-data folder
+      - ./mounts/scripts:/workspace/mnt/scripts:cached
+      
+      # Optional: Mount managed repositories CSV
+      # Uncomment if you have a repos.csv file
+      # - ./mounts/scripts/my-repos.csv:/workspace/mnt/scripts/my-repos.csv:ro
+    
+    # Environment variables for Git configuration
+    environment:
+      # Required: Set your Git user name and email
+      - GIT_USER_NAME=${GIT_USER_NAME:-Your Name}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-your.email@example.com}
+      
+      # Optional: Path to managed repositories CSV file
+      # - MANAGED_REPOS_CSV=/workspace/mnt/scripts/my-repos.csv
+      
+      # SSH agent socket (will be created by agent-init.sh)
+      # - SSH_AUTH_SOCK=/tmp/ssh-agent.sock
+    
+    # Working directory
+    # working_dir: /workspace/mnt/this-repo
+    
+    # Run as non-root user (UID:GID 888:888)
+    # user: "888:888"
+   
+    # Keep container running
+    command: sleep infinity
+    
+    # Remove container automatically when stopped
+    # Note: Data in mounted volumes (./mounts/*) is preserved
+    labels:
+      - "com.docker.compose.project.remove=true"
+
+# Named volumes
+volumes:
+  vscode-home:
+    name: dc-ex-01_vscode-home
+    # This volume persists VS Code Server cache across container recreations
+    # Clean up with: docker volume rm dc-ex-01_vscode-home

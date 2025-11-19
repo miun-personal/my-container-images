@@ -33,11 +33,13 @@ ENV WORKSPACE_HOME=${__workspace_home} \
     WORKSPACE_USER_HOME=${__workspace_home}/home/${__uname} \
     WORKSPACE_MAIN_REPO_HOME=${__workspace_home}/mnt/this-repo \
     WORKSPACE_MOUNTED_SCRIPTS_HOME=${__workspace_home}/mnt/scripts \
+    WORKSPACE_MANAGED_REPOS_HOME=${__workspace_home}/mnt/repos \
     WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME=${__workspace_home}/util \
-    ENV=${__workspace_home}\.ashrc \
+    ENV=${__workspace_home}/.ashrc \
     TEMPDIR=/tmp
 
-RUN echo '# User aliases and environment' > ${ENV} \
+RUN mkdir -p "${__workspace_home}" \
+    && echo '# User aliases and environment' > ${ENV} \
   && echo 'alias ll="ls -lah"' >> ${ENV} \
   && echo 'alias scommit="git commit -s"' >> ${ENV} \
   && echo 'alias scommitg="git commit -S -s"' >> ${ENV} \
@@ -51,6 +53,9 @@ RUN echo '# User aliases and environment' > ${ENV} \
     && echo '# Source ssh-agent if available' >> ${ENV} \
     && echo '[ -f "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/agent-init.sh" ] && . "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/agent-init.sh"' >> ${ENV} \
     && echo '' >> ${ENV} \
+    && echo '# Source repo management utilities' >> ${ENV} \
+    && echo '[ -f "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/repo-utils.sh" ] && . "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/repo-utils.sh"' >> ${ENV} \
+    && echo '' >> ${ENV} \
     && echo '# Ensure main repo is a safe git directory' >> ${ENV} \
     && echo 'if ! git config --global --get-all safe.directory | grep -qx "${WORKSPACE_MAIN_REPO_HOME}"; then git config --global --add safe.directory "${WORKSPACE_MAIN_REPO_HOME}"; fi' >> ${ENV} \
     && addgroup -g ${__gid} ${__gname} \
@@ -58,7 +63,9 @@ RUN echo '# User aliases and environment' > ${ENV} \
     && mkdir -p \
       "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}" \
       "${WORKSPACE_MAIN_REPO_HOME}" \
+      "${WORKSPACE_MANAGED_REPOS_HOME}" \
       "${WORKSPACE_MOUNTED_SCRIPTS_HOME}" \
+      "${WORKSPACE_USER_HOME}" \
     && chown -R ${__uid}:${__gid} "${__workspace_home}" \
     && git config --global --add safe.directory "${WORKSPACE_MAIN_REPO_HOME}"
 
@@ -71,9 +78,13 @@ USER ${__uname}
 
 WORKDIR "${__workspace_home}"
 
+# Note: WORKSPACE_USER_HOME is NOT declared as VOLUME
+# Declaring it as VOLUME would reset ownership to root, causing permission issues
+# Let docker-compose or runtime decide whether to mount it
 VOLUME \
-  "${WORKSPACE_USER_HOME}" \
   "${WORKSPACE_MAIN_REPO_HOME}" \
-  "${WORKSPACE_MOUNTED_SCRIPTS_HOME}"
+  "${WORKSPACE_MANAGED_REPOS_HOME}" \
+  "${WORKSPACE_MOUNTED_SCRIPTS_HOME}" \
+  "${WORKSPACE_USER_HOME}"
 
 ## End Layer

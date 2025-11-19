@@ -1,0 +1,3 @@
+url,path,name
+git@github.com:miun-personal/my-container-images.git,/workspace/mnt/repos,miun-containers
+git@github.com:facebook/react.git,/workspace/mnt/repos/gh/facebook,react

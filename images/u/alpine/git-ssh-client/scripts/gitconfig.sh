@@ -28,18 +28,19 @@ printf "\n"
 git config --global user.name "${GIT_USER_NAME}"
 git config --global user.email "${GIT_USER_EMAIL}"
 
+[ ! -f "$HOME/.ssh/allowed_signers" ] && touch "$HOME/.ssh/allowed_signers"
+
 # Configure commit signing (if key exists)
 if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
     git config --global user.signingkey ~/.ssh/id_ed25519.pub
     
     # Create allowed_signers file if it doesn't exist
-    if [ ! -f "$HOME/.ssh/allowed_signers" ]; then
-        printf "%bCreating allowed_signers file...%b\n" "${YELLOW}" "${NC}"
-        cp ~/.ssh/allowed_signers /tmp/ssh_allowed_signers
-        echo "${GIT_USER_EMAIL} $(cat ~/.ssh/id_ed25519.pub)" > /tmp/ssh_allowed_signers
-        cat /tmp/ssh_allowed_signers | sort | uniq  > ~/.ssh/allowed_signers
-        rm /tmp/ssh_allowed_signers
-    fi
+
+    printf "%bAssuring allowed_signers file contain our signature key ...%b\n" "${YELLOW}" "${NC}"
+    cp ~/.ssh/allowed_signers /tmp/ssh_allowed_signers
+    echo "${GIT_USER_EMAIL} $(cat ~/.ssh/id_ed25519.pub)" > /tmp/ssh_allowed_signers
+    cat /tmp/ssh_allowed_signers | sort | uniq  > ~/.ssh/allowed_signers
+    rm /tmp/ssh_allowed_signers
     
     git config --global gpg.ssh.allowedSignersFile ~/.ssh/allowed_signers
     printf "%b[+] SSH signing configured%b\n" "${GREEN}" "${NC}"

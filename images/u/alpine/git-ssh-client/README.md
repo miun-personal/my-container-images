@@ -49,30 +49,111 @@ This will configure your Git user, email, and enable SSH commit signing if a key
 **Key concept:** The container is intended to mount a dedicated directory or volume from the host as the user's home directory inside the container (not just `.ssh`). This enables persistent user configuration, SSH keys, and other files, and is especially useful for running with a read-only root filesystem. You do **not** need to mount your actual host home directory—use a dedicated directory or Docker volume for isolation and security.
 
 ## Features
-  - `git`, `curl`, `openssh-client`, `mandoc`, `shellcheck`, `shunit2`
+
+- **Core Tools**: `git`, `curl`, `openssh-client`, `mandoc`, `shellcheck`, `shunit2`
+- **SSH Agent Management**: Automatic SSH agent initialization and key management
+- **Git Signing**: SSH-based commit and tag signing support
+- **Multi-Repository Management**: Manage multiple repositories with unified commands
+- **Read-Only Filesystem**: Compatible with read-only root filesystem for enhanced security
+- **DCO Compliance**: Built-in aliases for sign-off workflows
 
 ## Usage
-### 6. Aliases and Environment
+### 6. Multi-Repository Management
 
-The following aliases are available to simplify common Git and SSH workflows, especially when sign-off and commit signing are required:
+The container includes powerful multi-repository management functions:
 
-- `ll`: `ls -lah` — List files in long format
+#### Available Commands
+
+- **`fetch-all`**: Clone and fetch all repositories
+  - Processes repositories from CSV file (if `MANAGED_REPOS_CSV` is set)
+  - Updates all existing repositories under `/workspace/mnt/repos`
+  - Updates the main repository at `/workspace/mnt/this-repo`
+
+- **`show-all-local-changes`**: Display all repositories with local changes
+  - Shows uncommitted changes (staged, unstaged, untracked)
+  - Shows commits ahead/behind upstream
+  - Displays merge conflicts
+  - Tabular format for easy scanning
+
+- **`list-all-repos`**: List all known repositories
+  - Shows repository name and path
+  - Includes main repo and all managed repos
+
+- **`repo-status <name>`**: Show detailed Git status for a specific repository
+  - Full `git status` output
+  - Useful for drilling down into specific repos
+
+#### Setting Up Managed Repositories
+
+1. Create a CSV file with your repositories (see `scripts/managed-repos-example.csv`):
+   ```csv
+   url,path,name
+   git@github.com:user/my-repo.git,/workspace/mnt/repos,my-repo
+   git@github.com:org/work-repo.git,/workspace/mnt/repos/work,work-repo
+   ```
+
+   The CSV format is:
+   - `url`: Git repository URL (SSH or HTTPS)
+   - `path`: Absolute parent directory where the repo will be cloned
+   - `name`: Repository directory name (repo will be at `path/name`)
+
+2. Set the environment variable:
+   ```yaml
+   environment:
+     - MANAGED_REPOS_CSV=/workspace/mnt/scripts/my-repos.csv
+   ```
+
+3. Mount the CSV file and repos directory:
+   ```yaml
+   volumes:
+     - ./my-repos.csv:/workspace/mnt/scripts/my-repos.csv
+     - ./repos:/workspace/mnt/repos
+   ```
+
+4. Inside the container, run:
+   ```sh
+   fetch-all
+   ```
+
+All repositories in the CSV will be processed and cloned/updated.
+
+### 7. Aliases and Environment
+
+The following aliases are available to simplify common Git and SSH workflows:
+
+**Git Signing Aliases:**
 - `scommit`: `git commit -s` — Commit with sign-off
 - `scommitg`: `git commit -S -s` — Commit with both GPG/SSH signing and sign-off
 - `smerge`: `git merge --signoff` — Merge with sign-off
 - `samend`: `git commit --amend -S -s` — Amend last commit with sign-off and signing
-- `spush`: `git push --signed` — Push with signed refs (if supported)
+- `spush`: `git push --signed` — Push with signed refs
 - `slog`: `git log --show-signature` — Show commit signatures in log
 - `srebase`: `git rebase --signoff` — Rebase with sign-off
 - `sclone`: `git clone --config commit.gpgsign=true` — Clone and enforce signed commits
+
+**General Aliases:**
+- `ll`: `ls -lah` — List files in long format
+
+**Environment:**
 - Customizations in `/workspace/.ashrc`
+- Auto-loaded SSH agent
+- Auto-loaded repository utilities
 
 ### 2. Run the Container
 Mount your code, scripts, and a **dedicated directory or Docker volume** as the user home:
 ```sh
+docker run -it --rm \
+  -v "$PWD:/workspace/mnt/this-repo" \
+  -v "$PWD/../repos:/workspace/mnt/repos" \
+  -v "$PWD/dev-home:/workspace/home/dev" \
   -v "$PWD/scripts:/workspace/mnt/scripts" \
   --read-only \
-- `/workspace/mnt/this-repo`: Your main repo (host)
+  my-git-ssh-client:latest
+```
+
+**Key Mount Points:**
+- `/workspace/mnt/this-repo`: Your main repo (typically the one opening the devcontainer)
+- `/workspace/mnt/repos`: Base directory for additional managed repositories
 - `/workspace/home/dev`: Dedicated directory or Docker volume for user home (persistent)
 
 ### 3. SSH Agent Setup
@@ -97,13 +178,17 @@ Then, inside the container:
 - `/workspace/util/agent-init.sh`: SSH agent loader/initializer
 - `/workspace/util/gitconfig.sh`: Git global config and signing setup
 - `/workspace/util/setup-ssh-key.sh`: Generate new SSH key
+- `/workspace/util/repo-utils.sh`: Multi-repository management library (auto-loaded)
 
 ## Volumes
 - `/workspace/home/dev`: User home (persistent, mount a dedicated directory or Docker volume)
-- `/workspace/mnt/this-repo`: Main repo mount
-- `/workspace/mnt/scripts`: Custom scripts
+- `/workspace/mnt/this-repo`: Main repository mount (typically the devcontainer repo)
+- `/workspace/mnt/repos`: Managed repositories base directory
+- `/workspace/mnt/scripts`: Custom scripts mount point
 
 ## Example: Docker Compose
+
+### Basic Setup
 ```yaml
 services:
   git-ssh-client:
@@ -112,9 +197,30 @@ services:
       - .:/workspace/mnt/this-repo
       - ./dev-home:/workspace/home/dev  # Use a dedicated directory or Docker volume
       - ./scripts:/workspace/mnt/scripts
+      - ./repos:/workspace/mnt/repos
     environment:
       - GIT_USER_NAME=Your Name
       - GIT_USER_EMAIL=your.email@example.com
+    working_dir: /workspace
+    user: dev
+    read_only: true
+```
+
+### With Managed Repositories
+```yaml
+services:
+  git-ssh-client:
+    image: my-git-ssh-client:latest
+    volumes:
+      - .:/workspace/mnt/this-repo
+      - ./dev-home:/workspace/home/dev
+      - ./scripts:/workspace/mnt/scripts
+      - ./repos:/workspace/mnt/repos
+      - ./my-repos.csv:/workspace/mnt/scripts/my-repos.csv:ro
+    environment:
+      - GIT_USER_NAME=Your Name
+      - GIT_USER_EMAIL=your.email@example.com
+      - MANAGED_REPOS_CSV=/workspace/mnt/scripts/my-repos.csv
     working_dir: /workspace
     user: dev
     read_only: true

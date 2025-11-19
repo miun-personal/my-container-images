@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default email
-DEFAULT_EMAIL="dev@example.com"
+DEFAULT_EMAIL="${GIT_USER_EMAIL:-dev@example.com}"
 EMAIL="${1:-$DEFAULT_EMAIL}"
 
 printf "\n"
