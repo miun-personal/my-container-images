@@ -4,14 +4,20 @@
     "ashrc",
     "backdoors",
     "Buildah",
+    "cyclonedx",
+    "filemode",
     "gname",
+    "gpgsign",
     "keygen",
     "nofile",
+    "safecrlf",
     "scommit",
     "seccomp",
+    "signingkey",
     "syscall",
     "syscalls",
     "ulimits"
   ],
-  "github.copilot.nextEditSuggestions.enabled": true
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "editor.tabSize": 2
 }

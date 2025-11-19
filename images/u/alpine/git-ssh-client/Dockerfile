@@ -20,9 +20,9 @@ RUN apk update --no-cache \
       shunit2=${__shunit2_version}
 
 ## Begin Layer Git Client User
-ARG __gid=888
+ARG __gid=1001
 ARG __gname=dev
-ARG __uid=888
+ARG __uid=1001
 ARG __uname=dev
 
 ## By design - this is where we work
@@ -36,19 +36,19 @@ ENV WORKSPACE_HOME=${__workspace_home} \
     WORKSPACE_MANAGED_REPOS_HOME=${__workspace_home}/mnt/repos \
     WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME=${__workspace_home}/util \
     ENV=${__workspace_home}/.ashrc \
-    TEMPDIR=/tmp
+    TMPDIR=/tmp
 
 RUN mkdir -p "${__workspace_home}" \
     && echo '# User aliases and environment' > ${ENV} \
-  && echo 'alias ll="ls -lah"' >> ${ENV} \
-  && echo 'alias scommit="git commit -s"' >> ${ENV} \
-  && echo 'alias scommitg="git commit -S -s"' >> ${ENV} \
-  && echo 'alias smerge="git merge --signoff"' >> ${ENV} \
-  && echo 'alias samend="git commit --amend -S -s"' >> ${ENV} \
-  && echo 'alias spush="git push --signed"' >> ${ENV} \
-  && echo 'alias slog="git log --show-signature"' >> ${ENV} \
-  && echo 'alias srebase="git rebase --signoff"' >> ${ENV} \
-  && echo 'alias sclone="git clone --config commit.gpgsign=true"' >> ${ENV} \
+    && echo 'alias ll="ls -lah"' >> ${ENV} \
+    && echo 'alias scommit="git commit -s"' >> ${ENV} \
+    && echo 'alias scommitg="git commit -S -s"' >> ${ENV} \
+    && echo 'alias smerge="git merge --signoff"' >> ${ENV} \
+    && echo 'alias samend="git commit --amend -S -s"' >> ${ENV} \
+    && echo 'alias spush="git push --signed"' >> ${ENV} \
+    && echo 'alias slog="git log --show-signature"' >> ${ENV} \
+    && echo 'alias srebase="git rebase --signoff"' >> ${ENV} \
+    && echo 'alias sclone="git clone --config commit.gpgsign=true"' >> ${ENV} \
     && echo '' >> ${ENV} \
     && echo '# Source ssh-agent if available' >> ${ENV} \
     && echo '[ -f "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/agent-init.sh" ] && . "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/agent-init.sh"' >> ${ENV} \

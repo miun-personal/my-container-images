@@ -35,7 +35,7 @@ foreach ($image in $images) {
   $fullImageName = "$($image.Repo):$tag"
   Write-Host "Building $fullImageName..." -ForegroundColor Green
   Push-Location $image.folder
-  docker buildx build -t $fullImageName .
+  docker buildx build --build-arg __build_image_tag=$tag -t $fullImageName .
   if ($LASTEXITCODE -ne 0) {
     Pop-Location
     Write-Error "Failed to build $fullImageName"
@@ -81,7 +81,7 @@ foreach ($image in $images) {
     --user root `
     -v /var/run/docker.sock:/var/run/docker.sock `
     -v "${scanResultsAbsolute}:/reports" `
-    miunpersonal/alpine-trivy-scanner:$tag `
+    miunpersonal/u-alpine-trivy-scanner:$tag `
     /usr/local/bin/scan-and-classify.sh "$fullImageName" "/reports" "$tag" "$imageSafeName"
     
   if ($LASTEXITCODE -ne 0) {

@@ -1,4 +1,4 @@
-FROM alpine
+FROM alpine:3.22
 
 ARG __buildah_version=1.41.6-r0
 ARG __curl_version=8.14.1-r2
