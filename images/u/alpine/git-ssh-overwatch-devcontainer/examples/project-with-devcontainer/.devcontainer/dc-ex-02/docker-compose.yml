@@ -1,0 +1,40 @@
+services:
+  git-ssh-client-01:
+    # Use pre-built image or build from local Dockerfile
+    image: local/u/alpine/git-ssh-client:latest
+    
+    # Alternative: build from Dockerfile
+    # build:
+    #   context: ../../..
+    #   dockerfile: Dockerfile
+    
+    # Mount points relative to the main repository
+    volumes:
+      # Main repository - the repo where this devcontainer lives
+      - ../..:/work/mnt/this-repo:cached
+      
+      # SSH keys - bind mount separately (persistent, long-lived)
+      # Mounted to a different location to avoid permission conflicts
+      # We'll symlink from home directory using postCreateCommand
+      - ./mounts/ssh:/work/home/dev/.ssh:cached
+      
+      # Additional managed repositories
+      # Mount a 'repos' directory parallel to the main repo
+      - ./mounts/repos:/work/mnt/repos:cached
+      
+      # Custom scripts directory (optional)
+      # Mount a 'scripts' directory in the .devcontainer-data folder
+      - ./mounts/scripts:/work/mnt/scripts:cached
+      
+      # Optional: Mount managed repositories CSV
+      # Uncomment if you have a repos.csv file
+      # - ./mounts/scripts/my-repos.csv:/work/mnt/scripts/my-repos.csv:ro
+    
+    # Environment variables for Git configuration
+    environment:
+      # Required: Set your Git user name and email
+      - GIT_USER_NAME=${GIT_USER_NAME:-Your Name}
+      - GIT_USER_EMAIL=${GIT_USER_EMAIL:-your.email@example.com}
+      
+      # Optional: Path to managed repositories CSV file
+      # - MANAGED_REPOS_CSV=/work/mnt/scripts/my-repos.csv

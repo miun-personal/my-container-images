@@ -1,0 +1,26 @@
+# Mounts directory structure
+# Keep directory structure in git but ignore most generated content
+
+# Ignore all contents of repos directory (cloned repositories)
+repos/*
+!repos/.gitkeep
+
+# Ignore all contents of scripts directory except examples
+scripts/*
+!scripts/.gitkeep
+!scripts/*.example
+
+# SSH directory - IMPORTANT: Private keys should be ignored but structure kept
+ssh/*
+!ssh/.gitkeep
+!ssh/config.example
+# If you want to commit specific public keys, add them explicitly:
+# !ssh/id_ed25519.pub
+
+# VS Code home directory (ephemeral, contains VS Code Server cache)
+# Can be deleted anytime to clean up
+vscode-home/
+
+# Old directories (no longer used, kept for migration)
+.vscode-home/
+user.home/

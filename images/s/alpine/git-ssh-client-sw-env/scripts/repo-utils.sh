@@ -3,14 +3,19 @@
 # This library provides functions for common multi-repo operations
 #
 # Usage: Source this file in your shell profile
-#   . /workspace/util/repo-utils.sh
+#   . /work/util/repo-utils.sh
 
 # shellcheck disable=SC3043
 
 # Configuration
-REPOS_BASE_DIR="${REPOS_BASE_DIR:-/workspace/mnt/repos}"
+# Use WORKSPACE_MANAGED_REPOS_HOME if set, otherwise fall back to REPOS_BASE_DIR or default
+if [ -n "${WORKSPACE_MANAGED_REPOS_HOME:-}" ]; then
+    REPOS_BASE_DIR="${WORKSPACE_MANAGED_REPOS_HOME}"
+else
+    REPOS_BASE_DIR="${REPOS_BASE_DIR:-/work/mnt/repos}"
+fi
 MANAGED_REPOS_CSV="${MANAGED_REPOS_CSV:-}"
-THIS_REPO_DIR="${WORKSPACE_MAIN_REPO_HOME:-/workspace/mnt/this-repo}"
+THIS_REPO_DIR="${WORKSPACE_MAIN_REPO_HOME:-/work/mnt/this-repo}"
 
 # Color output
 _REPO_COLOR_RED='\033[0;31m'
@@ -328,6 +333,7 @@ list_all_repos() {
     printf "\n"
     
     local count=0
+    local tmpfile="/dev/shm/list-repos-$$.tmp"
     
     # List this-repo
     if [ -d "$THIS_REPO_DIR" ] && _repo_is_git_repo "$THIS_REPO_DIR"; then
@@ -337,12 +343,14 @@ list_all_repos() {
     
     # List repos in base directory
     if [ -d "$REPOS_BASE_DIR" ]; then
-        _repo_find_all "$REPOS_BASE_DIR" | while read -r repo_path; do
+        _repo_find_all "$REPOS_BASE_DIR" > "$tmpfile"
+        while read -r repo_path; do
             local repo_name
             repo_name="$(basename "$repo_path")"
             printf "%-30s %s\n" "$repo_name" "$repo_path"
             count=$((count + 1))
-        done
+        done < "$tmpfile"
+        rm -f "$tmpfile"
     fi
     
     printf "\n%bTotal: %d repositories%b\n" "$_REPO_COLOR_GREEN" "$count" "$_REPO_COLOR_NC"

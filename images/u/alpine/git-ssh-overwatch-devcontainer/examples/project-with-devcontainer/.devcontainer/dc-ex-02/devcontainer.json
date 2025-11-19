@@ -1,0 +1,33 @@
+{
+  "name": "Git SSH Client (Alpine)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "git-ssh-client-01",
+  //"workspaceFolder": "/work/mnt/this-repo",
+  "workspaceFolder": "/workspace",
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root",
+  "remoteUser": "dev",
+  // Configure tool-specific properties.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "eamodio.gitlens",
+        "timonwong.shellcheck"
+      ]
+    }
+  },
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  // "features": {},
+  // Use 'postCreateCommand' to run commands after the container is created.
+  // "postCreateCommand": "sh -c 'rm -rf ~/.ssh && ln -sf /work/mnt/ssh-keys ~/.ssh && echo \"Container ready. Run /work/util/gitconfig.sh to configure Git.\"'",
+  // Shutdown behavior when closing VS Code or switching away from container
+  // "stopCompose" - runs docker compose down (removes containers, keeps volumes)
+  // "none" - leaves container running
+  "shutdownAction": "stopCompose",
+  // Remove containers on rebuild (useful for cleaning up)
+  "runServices": [],
+  // Override the default command (we want sleep infinity from docker-compose)
+  "overrideCommand": false
+}

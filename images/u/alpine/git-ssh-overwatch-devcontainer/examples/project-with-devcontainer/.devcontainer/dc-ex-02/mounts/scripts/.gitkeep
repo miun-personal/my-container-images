@@ -1,0 +1,2 @@
+# This file ensures the dev-home directory is created in git
+# The directory will be populated when the container starts
