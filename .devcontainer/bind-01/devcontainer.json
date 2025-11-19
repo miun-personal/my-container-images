@@ -4,7 +4,7 @@
     "image": "mi-bind-01",
     "args": {
       "__uname": "mibind",
-      "__uid": "888"
+      "__uid": "${localEnv:DEVCONTAINER_USER_ID:1001}"
     }
   },
   "remoteEnv": {
