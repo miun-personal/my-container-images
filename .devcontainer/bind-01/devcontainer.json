@@ -3,7 +3,8 @@
     "dockerfile": "Dockerfile",
     "image": "mi-bind-01",
     "args": {
-      "__uname": "mibind"
+      "__uname": "mibind",
+      "__uid": "888"
     }
   },
   "remoteEnv": {
