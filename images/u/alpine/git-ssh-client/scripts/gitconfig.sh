@@ -52,7 +52,7 @@ git config --global core.autocrlf input
 git config --global core.eol lf
 git config --global core.filemode true
 git config --global core.safecrlf warn
-git config --global gpg.format=ssh
+git config --global gpg.format ssh
 
 printf "\n"
 printf "%bGit global configuration completed successfully!%b\n" "${GREEN}" "${NC}"
