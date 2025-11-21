@@ -1,6 +1,4 @@
 Repo,folder
-miunpersonal/u-alpine-trivy-scanner,images/u/alpine/trivy-scanner
-miunpersonal/s-alpine-git-ssh-client-sw,images/s/alpine/git-ssh-client-sw
-miunpersonal/s-alpine-git-ssh-client-sw-env,images/s/alpine/git-ssh-client-sw-env
-miunpersonal/u-alpine-git-ssh-client,images/u/alpine/git-ssh-client
-miunpersonal/u-alpine-git-ssh-overwatch-devcontainer,images/u/alpine/git-ssh-overwatch-devcontainer
+miunpersonal/sa3-git-guardian,images/01.s/01.alpine3/01.git-guardian
+miunpersonal/ha3-git-guardian,images/02.h/01.alpine3/01.git-guardian
+miunpersonal/ua3-git-guardian,images/03.u/01.alpine3/01.git-guardian

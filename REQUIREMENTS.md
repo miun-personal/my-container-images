@@ -12,8 +12,9 @@ We define the following convention for subfolders
 
 Folder|Description
 -|-
-`images\s`| Images gathering software only
-`images\u`| Images built on top of the former, but adding non-root users
+`images\s`| Images gathering external software only. These evolve whenever a dependency version increases
+`images\h`| Images built on top of the software only ones, hut having some software enhancements of my own
+`images\u`| Images built on top of the former images, but adding non-root users
 
 ## Image Requirements
 

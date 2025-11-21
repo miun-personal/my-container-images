@@ -1,0 +1,23 @@
+services:
+  mi-c1:
+    image: mi-c1
+    build:
+      context: ./build
+      args :
+        - __trivy_cache_dir=${TRIVY_CACHE_DIR}
+        - __workspace_home=${CONTAINER_WORKSPACE_FOLDER}
+    hostname: mi-c1
+    container_name: mi-c1
+    volumes:
+      - trivy-cache:${TRIVY_CACHE_DIR}
+      - ../../:${CONTAINER_WORKSPACE_FOLDER}
+    security_opt:
+      - "seccomp=./seccomp.json"
+    command: sleep infinity
+    devices:
+      - /dev/fuse
+    environment:
+      - CONTAINER_WORKSPACE_FOLDER
+
+volumes:
+  trivy-cache: {}

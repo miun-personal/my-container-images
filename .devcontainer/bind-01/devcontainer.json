@@ -1,28 +1,10 @@
 {
-  "build": {
-    "dockerfile": "Dockerfile",
-    "image": "mi-bind-01",
-    "args": {
-      "__uname": "mibind",
-      "__uid": "${localEnv:DEVCONTAINER_USER_ID:1001}"
-    }
-  },
-  "remoteEnv": {
-    "CONTAINER_WORKSPACE_FOLDER": "${containerWorkspaceFolder}",
-    "TRIVY_CACHE_DIR": "${containerWorkspaceFolder}/cache/trivy"
-  },
-  "name": "mi-bind-01",
-  "containerUser": "mibind",
-  "runArgs": [
-    "--rm",
-    "--hostname",
-    "mi-bind-01",
-    "--name",
-    "mi-bind-01",
-    "--security-opt",
-    "seccomp=${localWorkspaceFolder}/.devcontainer/bind-01/seccomp.json",
-    "--device=/dev/fuse"
-  ],
+  "name": "mi-c1",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "mi-c1",
+  // ATTN: this MUST match CONTAINER_WORKSPACE_FOLDER in the .env file
+  "workspaceFolder": "/mi/my-container-images",
+  // "workspaceFolder": "${containerEnv:CONTAINER_WORKSPACE_FOLDER}",
   "postCreateCommand": "git config --global --add safe.directory ${CONTAINER_WORKSPACE_FOLDER}",
   "customizations": {
     "vscode": {
@@ -47,8 +29,5 @@
         "zrnatoneto.dark-green"
       ]
     }
-  },
-  "mounts": [
-    "target=${containerWorkspaceFolder}/cache/trivy,type=volume"
-  ]
+  }
 }

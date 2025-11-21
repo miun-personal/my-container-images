@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# shellcheck source-path=SCRIPTDIR/scripts
+
+# User aliases and environment
+alias ll="ls -lah"
+alias scommit="git commit -s"
+alias scommitg="git commit -S -s"
+alias smerge="git merge --signoff"
+alias samend="git commit --amend -S -s"
+alias spush="git push --signed"
+alias slog="git log --show-signature"
+alias srebase="git rebase --signoff"
+alias sclone="git clone --config commit.gpgsign=true"
+alias setup-ssh-key='${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/setup-ssh-key.sh'
+alias configure-git='${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/gitconfig.sh'
+
+# Source ssh-agent if available
+[ -f "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/agent-init.sh" ] && . "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/agent-init.sh"
+
+# Source repo management utilities
+[ -f "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/repo-utils.sh" ] && . "${WORKSPACE_IMAGE_PROVIDED_SCRIPTS_HOME}/repo-utils.sh"
+
+# Ensure main repo is a safe git directory
+if ! git config --global --get-all safe.directory | grep -qx "${WORKSPACE_MAIN_REPO_HOME}"; then git config --global --add safe.directory "${WORKSPACE_MAIN_REPO_HOME}"; fi
+
+export PS1='\u@\h:\w $ '

@@ -15,6 +15,20 @@ color_cyan() { printf '\033[0;36m%s\033[0m\n' "$1"; }
 color_magenta() { printf '\033[0;35m%s\033[0m\n' "$1"; }
 color_gray() { printf '\033[0;90m%s\033[0m\n' "$1"; }
 
+init(){
+  ## Private constants
+  __TRIVY_BASE_COMMAND='trivy image --offline-scan --cache-dir /mnt/trivy-cache'
+  __IMAGE_METADATA_HOME='/dev/shm/images/metadata'
+  # Trivy Settings
+  __TR_CACHE="${TRIVY_CACHE_DIR:-/tmp/trivy-cache}"
+  mkdir -p "${__TR_CACHE}"
+  # Trivy global flags
+  __TR_GF="--cache-dir ""${__TR_CACHE}"" --exit-code 3"
+  # Trivy base command
+  __TR_BC="trivy ${__TR_GF}"
+}
+init
+
 # Generate tag in format YYMDD (YY=year, M=hex month, DD=day)
 get_image_tag() {
   year=$(date +%y)
@@ -58,6 +72,7 @@ build_image(){
 
   if [ ! -d "${__folder}" ]; then
     color_red "[build_image()] Fatal: folder ${__folder} does not exist"
+    color_red "[build_image()] Info: current folder is: $(pwd)"
     return 1
   fi
   if [ ! -f "${__folder}/Dockerfile" ];then
@@ -70,15 +85,15 @@ build_image(){
 
   cd "${__folder}" || return 3
 
-  if ! buildah bud --build-arg "__build_image_tag=${tag}" --isolation=chroot -t "$full_image_name" .; then
+  if ! buildah bud --build-arg "__build_image_tag=${tag}" --isolation=chroot -t "$__image" .; then
     cd - > /dev/null
-    color_red "[build_image()] Error: Failed to build $full_image_name"
+    color_red "[build_image()] Error: Failed to build $__image"
     echo "" >&2
     return 3
   fi
 
   cd "${__crtPath}" || return 4
-  color_green "✓ Built $full_image_name"
+  color_green "✓ Built $__image"
   return 0
 }
 
@@ -102,51 +117,101 @@ get_shm_dir_for_image(){
   echo "/dev/shm/my-images-data/$(echo "${1}" | tr '/.:' '_')"
 }
 
-scan_image(){
-  local __image=$1
-  color_green "[scan_image()] Scanning $__image..."
-  if ! buildah inspect "${__image}" >/dev/null 2>&1; then
-    color_red "[scan_image()] Fatal: Cannot inspect image $1"
-    return 1
-  fi
+__scan_sbom(){
+  # Parameters
+  # $1 - SBOM file to scan
+  # $2 - destination file
+  # $3 - which scanners OPTIONAL, default vuln
+  # $4 - which format OPTIONAL, default table
 
-  local __shm_image_dir
-  __shm_image_dir=$(get_shm_dir_for_image "${__image}")
+  local __scanners="${3:-vuln}"
+  local __format="${4:-table}"
 
-  mkdir -p "${__shm_image_dir}"
+  color_cyan "[__scan_sbom()] Scanning Cyclone DX SBOM from file ${2} using scanners ${__scanners} and format ${__format}..."
 
-  local __scan_file="${__shm_image_dir}/scan.txt"
-  local __cmd_base="trivy image --offline-scan --cache-dir /mnt/trivy-cache  --exit-code 3"
-  local __cmd_scan="${__cmd_base} --format table --output ""${__scan_file}"""
-  __cmd_scan="${__cmd_scan} \"$__image\""
+  local __cmd_scan="${__TR_BC} sbom --offline-scan --scanners ${__scanners} --format ${__format}"
+  __cmd_scan="${__cmd_scan} --output ""${2}"""
+  __cmd_scan="${__cmd_scan} ""${1}"""
+  local __ts
+  __ts=$(date +%s)
 
-  local __scan_stdout="${__shm_image_dir}/scan.stdout"
-  local __scan_stderr="${__shm_image_dir}/scan.stderr"
+  local __scan_stdout="${2}.${__ts}.stdout"
+  local __scan_stderr="${2}.${__ts}.stderr"
 
-  # Run Trivy scan
-  #echo "DEBUG: About to run: ${__cmd_scan}"
-  #echo "DEBUG: Command (hex): $(echo -n "${__cmd_scan}" | xxd)"
+  # Generate SBOM
   if ! eval "${__cmd_scan}" >"${__scan_stdout}" 2>"${__scan_stderr}"; then
-    color_yellow "[scan_image()] Warning: Scan of $__image completed with warnings: code $?"
+    color_yellow "[__scan_sbom()] Warning: Creation of cyclonedx sbom for tar export ${1} completed with warnings: code $?"
     echo "========= command was ==============="
     echo "${__cmd_scan}"
     echo "========= stdout      ==============="
     cat "${__scan_stdout}"
     echo "========= stderr      ==============="
     cat "${__scan_stderr}"
-    echo "========= scan result ==============="
-    cat "${__scan_file}"
     echo "========= end         ==============="
   fi
+}
 
-  local __sbom_file="${__shm_image_dir}/sbom.json"
-  local __cmd_sbom="${__cmd_base} --format cyclonedx --output ""${__sbom_file}"" ""$__image"""
-  local __sbom_stdout="${__shm_image_dir}/sbom.stdout"
-  local __sbom_stderr="${__shm_image_dir}/sbom.stderr"
+__scan_sbom_for_vulnerabilities(){
+  __scan_sbom "$1" "$2" "vuln"
+}
+
+__scan_sbom_for_licenses(){
+  # Params
+  # $1 - sbom to scan
+  # $2 - image destination directory
+  __scan_sbom "$1" "$2"/licenses.txt "license" "table"
+  __scan_sbom "$1" "$2"/licenses.spdx.txt "license" "spdx"
+  __scan_sbom "$1" "$2"/licenses.spdx.json "license" "spdx-json"
+}
+
+__scan_img_tar_for_misconfiguration(){
+  # Parameters
+  # $1 - tar file of an exported image
+  # $2 - destination directory
+
+  local __out_fileName="${2}/misconfiguration-and-secrets.txt"
+
+  color_cyan "[__scan_img_tar_for_misconfiguration()] Scanning image tar file ${1} for misconfigurations..."
+
+  local __cmd_scan="${__TR_BC} image  --offline-scan --format table --input ""${1}"""
+  __cmd_scan="${__cmd_scan} --output ""${__out_fileName}"""
+  local __ts 
+  __ts=$(date +%s)
+
+  local __scan_stdout="${__out_fileName}.${__ts}.stdout"
+  local __scan_stderr="${__out_fileName}.${__ts}.stderr"
+
+  # Generate SBOM
+  if ! eval "${__cmd_scan}" >"${__scan_stdout}" 2>"${__scan_stderr}"; then
+    color_yellow "[__scan_img_tar_for_misconfiguration()] Warning: Creation of cyclonedx sbom for tar export ${1} completed with warnings: code $?"
+    echo "========= command was ==============="
+    echo "${__cmd_scan}"
+    echo "========= stdout      ==============="
+    cat "${__scan_stdout}"
+    echo "========= stderr      ==============="
+    cat "${__scan_stderr}"
+    echo "========= end         ==============="
+  fi
+}
+
+__generate_sbom_from_tar(){
+  # Parameters
+  # $1 - tar file of an exported image
+  # $2 - destination file
+  color_cyan "[__generate_sbom_from_tar()] Generating a complete Cyclone DX SBOM for tar file ${1} into output file ${2}..."
+
+  local __cmd="${__TR_BC} image --offline-scan --license-full --format cyclonedx"
+  __cmd="${__cmd} --scanners vuln,misconfig,secret,license"
+  __cmd="${__cmd} --output ""${2}"" --input ""$1"" "
+  local __ts 
+  __ts=$(date +%s)
+
+  local __sbom_stdout="${2}.${__ts}.stdout"
+  local __sbom_stderr="${2}.${__ts}.stderr"
   
   # Generate SBOM
-  if ! eval "${__cmd_sbom}" >"${__sbom_stdout}" 2>"${__sbom_stderr}"; then
-    color_yellow "[scan_image()] Warning: Creation of cyclonedx sbom form image $__image completed with warnings: code $?"
+  if ! eval "${__cmd}" >"${__sbom_stdout}" 2>"${__sbom_stderr}"; then
+    color_yellow "[__generate_sbom_from_tar()] Warning: Creation of cyclonedx sbom for tar export ${1} completed with warnings: code $?"
     echo "========= command was ==============="
     echo "${__cmd_sbom}"
     echo "========= stdout      ==============="
@@ -157,10 +222,47 @@ scan_image(){
   fi
 }
 
+scan_image(){
+  ## Notes
+    # Tactic is to scan is SBOM first, then vulnerabilities on sbom, then misconfiguration
+    # Extend as needed with iterations
+    # Results are stored in /dev/shm/my-images-data on a per image basis
+
+  local __image=$1
+  color_green "[scan_image()] Scanning $__image..."
+  if ! buildah inspect "${__image}" >/dev/null 2>&1; then
+    color_red "[scan_image()] Fatal: Cannot inspect image $1. Was it built before?"
+    return 1
+  fi
+
+  local __shm_image_dir
+  __shm_image_dir=$(get_shm_dir_for_image "${__image}")
+  mkdir -p "${__shm_image_dir}"
+
+  mkdir -p "${TRIVY_CACHE_DIR}/scanned_images"
+  local __shm_image_tar
+  __shm_image_tar="${TRIVY_CACHE_DIR}/scanned_images/img_$(date +%s).tar"
+
+  color_cyan "[scan_image()] Exporting the image ${__image} into tar file ${__shm_image_tar} ..."
+  buildah push --format docker "${__image}" "docker-archive:${__shm_image_tar}"
+
+  # Step 1 - generate SBOM
+  local __sbom_file="${__shm_image_dir}/sbom.json"
+  __generate_sbom_from_tar "${__shm_image_tar}" "${__sbom_file}"
+
+  # Step 2 - scan for vulnerabilities based on sbom
+  local __scan_file="${__shm_image_dir}/scan.txt"
+  __scan_sbom_for_vulnerabilities "${__sbom_file}" "${__scan_file}"
+
+  # Step 3 - scan for licenses based on sbom
+  __scan_sbom_for_licenses "${__sbom_file}" "${__shm_image_dir}"
+
+  # Step 4 - scan for misconfiguration and secrets
+  __scan_img_tar_for_misconfiguration "${__shm_image_tar}" "${__shm_image_dir}"
+}
+
 classify_image(){
   local __image="$1"
-  color_green "[classify_image()] Classifying $__image..."
-
   local __shm_image_dir
   __shm_image_dir=$(get_shm_dir_for_image "${__image}")
 
@@ -170,18 +272,24 @@ classify_image(){
     fi
   fi
 
-    # Count vulnerabilities by severity
+  color_cyan "[classify_image()] Classifying $__image..."
+
+  # Count vulnerabilities by severity
   local critical_count=0
   local high_count=0
   local medium_count=0
   local low_count=0
-  local __scan_file="${__shm_image_dir}/scan.txt"
+  local __sbom_file="${__shm_image_dir}/sbom.json"
 
-  if [ -f "$__scan_file" ]; then
-    critical_count=$(grep -c "CRITICAL" "$__scan_file" || true)
-    high_count=$(grep -c "HIGH" "$__scan_file" || true)
-    medium_count=$(grep -c "MEDIUM" "$__scan_file" || true)
-    low_count=$(grep -c "LOW" "$__scan_file" || true)
+  if [ -f "$__sbom_file" ]; then
+    local __jq_query='[.vulnerabilities[]? | select([.ratings[]? | .severity == "critical"] | any)] | length'
+    critical_count=$(jq "${__jq_query}" "${__sbom_file}" || echo 0)
+    __jq_query='[.vulnerabilities[]? | select([.ratings[]? | .severity == "high"] | any)] | length'
+    high_count=$(jq "${__jq_query}" "${__sbom_file}" || echo 0)
+    __jq_query='[.vulnerabilities[]? | select([.ratings[]? | .severity == "medium"] | any)] | length'
+    medium_count=$(jq "${__jq_query}" "${__sbom_file}" || echo 0)
+    __jq_query='[.vulnerabilities[]? | select([.ratings[]? | .severity == "low"] | any)] | length'
+    low_count=$(jq "${__jq_query}" "${__sbom_file}" || echo 0)
   fi
 
   # Determine classification based on vulnerability counts
@@ -200,13 +308,14 @@ classify_image(){
 
   # Create recommended tag
   recommended_tag="${tag}-$(echo "$class_type" | tr '[:upper:]' '[:lower:]')"
+  color_green "[classify_image()] Recommended tag is ${recommended_tag}"
 
   # Save classification report
   classification_file="${__shm_image_dir}/classification.txt"
   {
     echo "Image Classification Report"
     echo "==========================="
-    echo "Image: $full_image_name"
+    echo "Image: $1"
     echo "Scan Date: $(date '+%Y-%m-%d %H:%M:%S')"
     echo ""
     echo "Vulnerability Summary:"
@@ -222,6 +331,14 @@ classify_image(){
   # Save classification csv
   classification_csv_file="${__shm_image_dir}/classification.csv"
   echo "$__image,$class_type,$recommended_tag,$critical_count,$high_count,$medium_count,$low_count" >> "$classification_csv_file"
+
+  color_cyan "Applying tags..."
+  # apply tags
+  buildah tag "$1" "${1%%:*}:${tag}-${class_type}"
+  buildah tag "$1" "${1%%:*}:latest-${class_type}"
+  buildah tag "$1" "${1%%:*}:latest"
+
+  color_green "Classification done"
 }
 
 classify_all(){
@@ -248,6 +365,19 @@ classify_all(){
   print_classification_report
 
   cp -r /dev/shm/my-images-data "$scan_results"/
+}
+
+push_image_with_tags(){
+  # Params
+  # $1 - image without tag (e.g., docker.io/miunpersonal/sa3-bind-ci-agent)
+  local image_base="$1"
+  # Ensure we are logged in before pushing
+  assure_login_status
+  # Get all tags for this image base
+  buildah images | awk -v img="$image_base" '$1 == img {print $1":"$2}' | while read -r full_tag; do
+    color_cyan "Pushing $full_tag ..."
+    buildah push "$full_tag"
+  done
 }
 
 print_classification_report(){
