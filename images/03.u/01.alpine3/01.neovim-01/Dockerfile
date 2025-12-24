@@ -2,13 +2,13 @@ ARG __image_version=3.22
 FROM alpine:${__image_version}
 
 # Alpine packages versions: https://pkgs.alpinelinux.org/
-ARG __curl_version=8.14.1-r2
-ARG __git_version=2.49.1-r0
-ARG __lazygit_version=0.48.0-r5
+ARG __curl_version=8.17.0-r1
+ARG __git_version=2.52.0-r0
+ARG __lazygit_version=0.48.0-r7
 ARG __mandoc_version=1.14.6-r13
-ARG __neovim_doc_version=0.11.1-r1
-ARG __neovim_version=0.11.1-r1
-ARG __shellcheck_version=0.10.0-r2
+ARG __neovim_doc_version=0.11.5-r0
+ARG __neovim_version=0.11.5-r0
+ARG __shellcheck_version=0.11.0-r0
 ARG __shfmt_version=3.11.0-r3
 ARG __shunit2_version=2.1.8-r1
 

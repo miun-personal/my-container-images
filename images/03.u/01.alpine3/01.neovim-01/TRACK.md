@@ -25,11 +25,11 @@ All packages installed from Alpine Linux package repository (https://pkgs.alpine
 |---------|---------|---------|---------|
 | neovim | 0.11.1-r1 | Apache-2.0 | Modern extensible text editor |
 | neovim-doc | 0.11.1-r1 | Apache-2.0 | Neovim documentation |
-| git | 2.49.1-r0 | GPL-2.0-only | Version control system |
-| shellcheck | 0.10.0-r2 | GPL-3.0-or-later | Shell script static analysis |
+| git | 2.52.0-r0 | GPL-2.0-only | Version control system |
+| shellcheck | 0.11.0-r0 | GPL-3.0-or-later | Shell script static analysis |
 | shfmt | 3.11.0-r3 | BSD-3-Clause | Shell script formatter |
 | shunit2 | 2.1.8-r1 | Apache-2.0 | Shell script unit testing framework |
-| curl | 8.14.1-r2 | curl | Data transfer tool with URL syntax |
+| curl | 8.17.0-r1 | curl | Data transfer tool with URL syntax |
 | mandoc | 1.14.6-r13 | ISC | Manual page viewer and formatter |
 
 ## License Breakdown

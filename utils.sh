@@ -5,7 +5,7 @@
 # Build and Scan All Alpine Images
 # This script builds all Alpine-based images and scans them with Trivy
 
-set -e
+# set -e
 
 # Colors for output (using printf with escape sequences)
 color_red() { printf '\033[0;31m%s\033[0m\n' "$1"; }

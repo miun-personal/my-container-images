@@ -5,8 +5,8 @@ FROM alpine:${__alpine_tag}
 
 ### BEGIN Layer __images/s/alpine/bind-trivy/Dockerfile/#1__
 ARG __buildah_version=1.41.6-r0
-ARG __curl_version=8.14.1-r2
-ARG __trivy_ver=v0.67.2
+ARG __curl_version=8.17.0-r1
+ARG __trivy_ver=v0.68.1
 ARG __fuse_overlayfs_version=1.15-r0
 ARG __netavark_version=1.16.1-r0
 
