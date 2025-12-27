@@ -339,7 +339,7 @@ show_all_local_changes() {
     printf '%*s\n' "$sep_len" '' | tr ' ' '-'
     
     while IFS=',' read -r repo branch behind ahead staged unstaged untracked conflicts lastcommit; do
-      printf "%-${max_repo_len}s %-{max_branch_len}s %-8s %-8s %-8s %-10s %-10s %-10s %-12s\n" \
+      printf "%-${max_repo_len}s %-${max_branch_len}s %-8s %-8s %-8s %-10s %-10s %-10s %-12s\n" \
         "$repo" "$branch" "$behind" "$ahead" "$staged" "$unstaged" "$untracked" "$conflicts" "$lastcommit"
     done < "$report_tmpfile"
     
