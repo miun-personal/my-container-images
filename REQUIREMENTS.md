@@ -28,6 +28,7 @@ All container images in this repository must adhere to the following requirement
 - All base images must specify exact versions (e.g., `alpine:3.18.4` not `alpine:latest`)
 - All installed packages must use explicit version numbers
 - All downloaded artifacts must reference specific versions or commit hashes
+- Exception to version pinning is applied for alpine and its packages, because alpine maintainers is already doing thi for us and we cannot install older versions of the package even if we wanted to. This may result in onerous breaks and interruptions of the work. Rather, maintain a history of the images in case this is needed.
 
 ### 2. Folder Structure
 
