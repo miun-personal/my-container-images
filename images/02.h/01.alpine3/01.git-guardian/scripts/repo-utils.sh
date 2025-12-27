@@ -231,42 +231,44 @@ fetch_all_repos() {
     
     # Process CSV if configured
     if [ -n "$MANAGED_REPOS_CSV" ] && [ -f "$MANAGED_REPOS_CSV" ]; then
-        printf "%bProcessing managed repositories from CSV: %s%b\n" "$_REPO_COLOR_YELLOW" "$MANAGED_REPOS_CSV" "$_REPO_COLOR_NC"
-        printf "\n"
+      printf "%bProcessing managed repositories from CSV: %s%b\n" "$_REPO_COLOR_YELLOW" "$MANAGED_REPOS_CSV" "$_REPO_COLOR_NC"
+      printf "\n"
+      
+      # Read CSV and process all repositories (format: url,path,name)
+      tail -n +2 "$MANAGED_REPOS_CSV" > /dev/shm/fetch-repos-$$.tmp
+      while IFS=',' read -r url parent_dir repo_name; do
+        # Skip empty lines
+        if [ -z "$url" ] || [ -z "$parent_dir" ] || [ -z "$repo_name" ]; then
+          continue
+        fi
         
-        # Read CSV and process all repositories (format: url,path,name)
-        tail -n +2 "$MANAGED_REPOS_CSV" > /dev/shm/fetch-repos-$$.tmp
-        while IFS=',' read -r url parent_dir repo_name; do
-            # Skip empty lines
-            if [ -z "$url" ] || [ -z "$parent_dir" ] || [ -z "$repo_name" ]; then
-                continue
-            fi
-            
-            # Process all repositories without hostname filtering
-            _repo_clone_or_update "$url" "$parent_dir" "$repo_name"
-            total_processed=$((total_processed + 1))
-        done < /dev/shm/fetch-repos-$$.tmp
-        rm -f /dev/shm/fetch-repos-$$.tmp
+        # Process all repositories without hostname filtering
+        _repo_clone_or_update "$url" "$parent_dir" "$repo_name"
+        total_processed=$((total_processed + 1))
+      done < /dev/shm/fetch-repos-$$.tmp
+      rm -f /dev/shm/fetch-repos-$$.tmp
     fi
     
     # Also fetch all existing repositories in the base directory
     if [ -d "$REPOS_BASE_DIR" ]; then
-        printf "\n%bFetching existing repositories in %s%b\n" "$_REPO_COLOR_YELLOW" "$REPOS_BASE_DIR" "$_REPO_COLOR_NC"
-        printf "\n"
-        
-        _repo_find_all "$REPOS_BASE_DIR" | while read -r repo_path; do
-            local repo_name
-            repo_name="$(basename "$repo_path")"
-            _repo_fetch_one "$repo_path" "$repo_name"
-            total_processed=$((total_processed + 1))
-        done
+      printf "\n%bFetching existing repositories in %s%b\n" "$_REPO_COLOR_YELLOW" "$REPOS_BASE_DIR" "$_REPO_COLOR_NC"
+      printf "\n"
+      
+      _repo_find_all "$REPOS_BASE_DIR" > /dev/shm/all-repos-$$.tmp
+      while read -r repo_path; do
+        local repo_name
+        repo_name="$(basename "$repo_path")"
+        _repo_fetch_one "$repo_path" "$repo_name"
+        total_processed=$((total_processed + 1))
+      done < /dev/shm/all-repos-$$.tmp
+      rm -f /dev/shm/all-repos-$$.tmp
     fi
     
     # Fetch this-repo if it exists
     if [ -d "$THIS_REPO_DIR" ] && _repo_is_git_repo "$THIS_REPO_DIR"; then
-        printf "\n%bFetching main repository: %s%b\n" "$_REPO_COLOR_YELLOW" "$THIS_REPO_DIR" "$_REPO_COLOR_NC"
-        _repo_fetch_one "$THIS_REPO_DIR" "this-repo"
-        total_processed=$((total_processed + 1))
+      printf "\n%bFetching main repository: %s%b\n" "$_REPO_COLOR_YELLOW" "$THIS_REPO_DIR" "$_REPO_COLOR_NC"
+      _repo_fetch_one "$THIS_REPO_DIR" "this-repo"
+      total_processed=$((total_processed + 1))
     fi
     
     printf "\n%b=== Fetch Complete ===%b\n" "$_REPO_COLOR_GREEN" "$_REPO_COLOR_NC"
@@ -311,27 +313,33 @@ show_all_local_changes() {
     
     # Calculate maximum repository path length
     local max_repo_len=10
-    while IFS=',' read -r repo _; do
+    local max_branch_len=8
+    while IFS=',' read -r repo branch _; do
       local repo_len=${#repo}
+      local branch_len=${#branch}
       if [ "$repo_len" -gt "$max_repo_len" ]; then
         max_repo_len=$repo_len
+      fi
+      if [ "$branch_len" -gt "$max_branch_len" ]; then
+        max_branch_len=$branch_len
       fi
     done < "$report_tmpfile"
     
     # Add some padding
     max_repo_len=$((max_repo_len + 2))
+    max_branch_len=$((max_branch_len + 2))
     
     printf "%bFound %d repositories with changes:%b\n" "$_REPO_COLOR_YELLOW" "$repo_count" "$_REPO_COLOR_NC"
     printf "\n"
-    printf "%-${max_repo_len}s %-15s %-8s %-8s %-8s %-10s %-10s %-10s %-12s\n" \
+    printf "%-${max_repo_len}s %-${max_branch_len}s %-8s %-8s %-8s %-10s %-10s %-10s %-12s\n" \
       "Repository" "Branch" "Behind" "Ahead" "Staged" "Unstaged" "Untracked" "Conflicts" "LastCommit"
     
     # Calculate separator length
-    local sep_len=$((max_repo_len + 15 + 8 + 8 + 8 + 10 + 10 + 10 + 12 + 8))
+    local sep_len=$((max_repo_len + max_branch_len + 8 + 8 + 8 + 10 + 10 + 10 + 12 + 8))
     printf '%*s\n' "$sep_len" '' | tr ' ' '-'
     
     while IFS=',' read -r repo branch behind ahead staged unstaged untracked conflicts lastcommit; do
-      printf "%-${max_repo_len}s %-15s %-8s %-8s %-8s %-10s %-10s %-10s %-12s\n" \
+      printf "%-${max_repo_len}s %-{max_branch_len}s %-8s %-8s %-8s %-10s %-10s %-10s %-12s\n" \
         "$repo" "$branch" "$behind" "$ahead" "$staged" "$unstaged" "$untracked" "$conflicts" "$lastcommit"
     done < "$report_tmpfile"
     
