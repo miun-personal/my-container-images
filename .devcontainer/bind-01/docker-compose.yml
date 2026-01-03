@@ -13,6 +13,7 @@ services:
       - ../../:${CONTAINER_WORKSPACE_FOLDER}
     security_opt:
       - "seccomp=./seccomp.json"
+      - "apparmor=unconfined"
     command: sleep infinity
     devices:
       - /dev/fuse
